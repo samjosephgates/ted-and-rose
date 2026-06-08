@@ -87,14 +87,6 @@ const TC = {
   jump:  { cx: 885, cy: 468, r: 44 },
 };
 
-let showTouchZones = false;
-const TOUCH_ZONE_BTN = { x: 8, y: 8, w: 48, h: 28 };
-
-function isTouchOnZoneBtn(p) {
-  return p.x >= TOUCH_ZONE_BTN.x && p.x < TOUCH_ZONE_BTN.x + TOUCH_ZONE_BTN.w &&
-         p.y >= TOUCH_ZONE_BTN.y && p.y < TOUCH_ZONE_BTN.y + TOUCH_ZONE_BTN.h;
-}
-
 function getTouchCanvasPos(t) {
   const rect = canvas.getBoundingClientRect();
   return {
@@ -107,7 +99,6 @@ function refreshTouchStates(e) {
   touch.left = false; touch.right = false; touch.jump = false;
   for (const t of e.touches) {
     const p = getTouchCanvasPos(t);
-    if (isTouchOnZoneBtn(p)) continue; // ignore touches on the toggle button
     if (p.x < W * 0.15)                        touch.left  = true;
     if (p.x >= W * 0.15 && p.x < W * 0.30)    touch.right = true;
     if (p.x >= W * 0.30)                       touch.jump  = true;
@@ -118,10 +109,6 @@ canvas.addEventListener('touchstart', e => {
   e.preventDefault();
   hasTouchScreen = true;
   touch.anyTap = true;
-  for (const t of e.changedTouches) {
-    const p = getTouchCanvasPos(t);
-    if (isTouchOnZoneBtn(p)) { showTouchZones = !showTouchZones; }
-  }
   refreshTouchStates(e);
 }, { passive: false });
 canvas.addEventListener('touchmove', e => {
@@ -1137,46 +1124,28 @@ function drawProgress() {
 // ── Touch controls overlay ────────────────────────────────────
 function drawTouchControls() {
   if (!hasTouchScreen) return;
-
-  // Zone overlay
-  if (showTouchZones) {
-    ctx.save();
-    ctx.globalAlpha = 0.12;
-    ctx.fillStyle = '#ff4444';
-    ctx.fillRect(0, 0, W * 0.15, H);
-    ctx.fillStyle = '#44ff44';
-    ctx.fillRect(W * 0.15, 0, W * 0.15, H);
-    ctx.fillStyle = '#4488ff';
-    ctx.fillRect(W * 0.30, 0, W * 0.70, H);
-    ctx.globalAlpha = 1;
-    ctx.font = 'bold 36px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(255,80,80,0.6)';
-    ctx.fillText('◀', W * 0.075, H / 2);
-    ctx.fillStyle = 'rgba(80,220,80,0.6)';
-    ctx.fillText('▶', W * 0.225, H / 2);
-    ctx.fillStyle = 'rgba(80,140,255,0.6)';
-    ctx.fillText('▲', W * 0.65, H / 2);
-    ctx.textBaseline = 'alphabetic';
-    ctx.restore();
-  }
-
-  // Toggle button (top-left)
   ctx.save();
-  const b = TOUCH_ZONE_BTN;
-  ctx.fillStyle = showTouchZones ? 'rgba(0,229,255,0.75)' : 'rgba(0,0,0,0.45)';
-  ctx.beginPath();
-  ctx.roundRect(b.x, b.y, b.w, b.h, 5);
-  ctx.fill();
-  ctx.strokeStyle = showTouchZones ? '#00e5ff' : 'rgba(255,255,255,0.35)';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-  ctx.fillStyle = showTouchZones ? '#001a20' : 'rgba(255,255,255,0.8)';
-  ctx.font = 'bold 11px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('ZONES', b.x + b.w / 2, b.y + b.h / 2);
+
+  function drawZoneBtn(label, cx, cy, w, h, active) {
+    ctx.fillStyle = active ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.28)';
+    ctx.beginPath();
+    ctx.roundRect(cx - w/2, cy - h/2, w, h, h/2);
+    ctx.fill();
+    ctx.strokeStyle = active ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = active ? '#fff' : 'rgba(255,255,255,0.5)';
+    ctx.font = 'bold 28px Arial';
+    ctx.fillText(label, cx, cy);
+  }
+
+  const bh = 56, bw = 80, by = H - 38;
+  drawZoneBtn('◀', W * 0.075, by, bw, bh, touch.left);
+  drawZoneBtn('▶', W * 0.225, by, bw, bh, touch.right);
+  drawZoneBtn('▲', W * 0.65,  by, bw, bh, touch.jump);
+
   ctx.textBaseline = 'alphabetic';
   ctx.restore();
 }
