@@ -77,7 +77,7 @@ window.addEventListener('gamepadconnected',    e => { gamepad = e.gamepad; conso
 window.addEventListener('gamepaddisconnected', e => { gamepad = null; });
 
 // ── Touch controls ────────────────────────────────────────────
-const hasTouchScreen = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+let hasTouchScreen = false; // set true only after a real touch event fires
 const touch = { left: false, right: false, jump: false, anyTap: false };
 
 // Button centers and hit radius in canvas pixels
@@ -107,6 +107,7 @@ function refreshTouchStates(e) {
 
 canvas.addEventListener('touchstart', e => {
   e.preventDefault();
+  hasTouchScreen = true;
   touch.anyTap = true;
   refreshTouchStates(e);
 }, { passive: false });
