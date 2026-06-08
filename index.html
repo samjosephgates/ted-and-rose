@@ -1024,9 +1024,7 @@ function updatePlayer() {
   if (player.x < 0) { player.x = 0; player.vx = 0; }
   if (player.x + player.w > LEVEL_W) { player.x = LEVEL_W - player.w; player.vx = 0; }
 
-  resolveCollisions(player, player.w, player.h);
-
-  // Block hits from below
+  // Block hits from below — must run BEFORE resolveCollisions zeroes vy
   if (player.vy < 0) {
     for (const qb of qblocks) {
       if (qb.hit) continue;
@@ -1058,6 +1056,8 @@ function updatePlayer() {
       }
     }
   }
+
+  resolveCollisions(player, player.w, player.h);
 
   // Fell off screen
   if (player.y > H + 100) {
