@@ -11,7 +11,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 100dvh;
+    min-height: -webkit-fill-available;
     overflow: hidden;
     font-family: 'Courier New', monospace;
   }
@@ -38,11 +39,14 @@ const H = canvas.height;
 
 // Scale canvas to fit screen while preserving 16:9 internal resolution
 function fitCanvas() {
-  const scale = Math.min(window.innerWidth / W, window.innerHeight / H);
+  const vw = window.visualViewport ? window.visualViewport.width  : window.innerWidth;
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const scale = Math.min(vw / W, vh / H);
   canvas.style.width  = (W * scale) + 'px';
   canvas.style.height = (H * scale) + 'px';
 }
 window.addEventListener('resize', fitCanvas);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCanvas);
 fitCanvas();
 
 // ── Game states ──────────────────────────────────────────────
