@@ -99,9 +99,9 @@ function refreshTouchStates(e) {
   touch.left = false; touch.right = false; touch.jump = false;
   for (const t of e.touches) {
     const p = getTouchCanvasPos(t);
-    if (Math.hypot(p.x - TC.left.cx,  p.y - TC.left.cy)  <= TC.left.r)  touch.left  = true;
-    if (Math.hypot(p.x - TC.right.cx, p.y - TC.right.cy) <= TC.right.r) touch.right = true;
-    if (Math.hypot(p.x - TC.jump.cx,  p.y - TC.jump.cy)  <= TC.jump.r)  touch.jump  = true;
+    if (p.x < W / 4)                       touch.left  = true;
+    if (p.x >= W / 4 && p.x < W / 2)      touch.right = true;
+    if (p.x >= W / 2)                      touch.jump  = true;
   }
 }
 
@@ -1123,30 +1123,7 @@ function drawProgress() {
 
 // ── Touch controls overlay ────────────────────────────────────
 function drawTouchControls() {
-  if (!hasTouchScreen) return;
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  function drawBtn(cx, cy, r, active, label, color) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = active ? `rgba(${color},0.55)` : `rgba(${color},0.22)`;
-    ctx.fill();
-    ctx.strokeStyle = active ? `rgba(${color},0.95)` : `rgba(${color},0.5)`;
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    ctx.fillStyle = active ? '#fff' : 'rgba(255,255,255,0.7)';
-    ctx.font = `bold ${Math.round(r * 0.7)}px Arial`;
-    ctx.fillText(label, cx, cy);
-  }
-
-  drawBtn(TC.left.cx,  TC.left.cy,  TC.left.r,  touch.left,  '◀', '255,255,255');
-  drawBtn(TC.right.cx, TC.right.cy, TC.right.r, touch.right, '▶', '255,255,255');
-  drawBtn(TC.jump.cx,  TC.jump.cy,  TC.jump.r,  touch.jump,  '▲', '80,220,255');
-
-  ctx.textBaseline = 'alphabetic';
-  ctx.restore();
+  // No visible UI — full-screen touch zones are used instead
 }
 
 // ============================================================
