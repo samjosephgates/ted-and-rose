@@ -768,9 +768,14 @@ const brickPlatforms = [
   { x: 2625, y: H-150, w:  50, h: 32 },  // inside gap 2600-2680
   { x: 3420, y: H-150, w:  50, h: 32 },  // inside gap 3400-3470
 ];
+const BSIZE = 40;
+let brickBlocks = [];
 brickPlatforms.forEach(p => {
-  platforms.push({ x: p.x, y: p.y, w: p.w, h: p.h, type: 'brick' });
+  for (let bx = p.x; bx < p.x + p.w; bx += BSIZE) {
+    brickBlocks.push({ x: bx, y: p.y, w: Math.min(BSIZE, p.x + p.w - bx), h: p.h, broken: false, anim: 0 });
+  }
 });
+const brickBlocksInit = JSON.parse(JSON.stringify(brickBlocks));
 
 // ── Question blocks ───────────────────────────────────────────
 let qblocks = [
@@ -936,25 +941,37 @@ function resolveCollisions(entity, w, h) {
   entity.onGround = false;
   for (const p of platforms) {
     if (!rectOverlap(entity.x, entity.y, w, h, p.x, p.y, p.w, p.h)) continue;
-    // from which direction?
     const overlapLeft  = (entity.x + w) - p.x;
     const overlapRight = (p.x + p.w) - entity.x;
     const overlapTop   = (entity.y + h) - p.y;
     const overlapBot   = (p.y + p.h) - entity.y;
     const minOv = Math.min(overlapLeft, overlapRight, overlapTop, overlapBot);
     if (minOv === overlapTop && entity.vy >= 0) {
-      entity.y = p.y - h;
-      entity.vy = 0;
-      entity.onGround = true;
+      entity.y = p.y - h; entity.vy = 0; entity.onGround = true;
     } else if (minOv === overlapBot && entity.vy <= 0) {
-      entity.y = p.y + p.h;
-      entity.vy = 0;
+      entity.y = p.y + p.h; entity.vy = 0;
     } else if (minOv === overlapLeft) {
-      entity.x = p.x - w;
-      entity.vx = 0;
+      entity.x = p.x - w; entity.vx = 0;
     } else if (minOv === overlapRight) {
-      entity.x = p.x + p.w;
-      entity.vx = 0;
+      entity.x = p.x + p.w; entity.vx = 0;
+    }
+  }
+  for (const bb of brickBlocks) {
+    if (bb.broken) continue;
+    if (!rectOverlap(entity.x, entity.y, w, h, bb.x, bb.y, bb.w, bb.h)) continue;
+    const overlapLeft  = (entity.x + w) - bb.x;
+    const overlapRight = (bb.x + bb.w) - entity.x;
+    const overlapTop   = (entity.y + h) - bb.y;
+    const overlapBot   = (bb.y + bb.h) - entity.y;
+    const minOv = Math.min(overlapLeft, overlapRight, overlapTop, overlapBot);
+    if (minOv === overlapTop && entity.vy >= 0) {
+      entity.y = bb.y - h; entity.vy = 0; entity.onGround = true;
+    } else if (minOv === overlapBot && entity.vy <= 0) {
+      entity.y = bb.y + bb.h; entity.vy = 0;
+    } else if (minOv === overlapLeft) {
+      entity.x = bb.x - w; entity.vx = 0;
+    } else if (minOv === overlapRight) {
+      entity.x = bb.x + bb.w; entity.vx = 0;
     }
   }
 }
@@ -969,6 +986,7 @@ function updatePlayer() {
       enemies = JSON.parse(JSON.stringify(enemiesInit));
       spitters = JSON.parse(JSON.stringify(spittersInit));
       qblocks = JSON.parse(JSON.stringify(qblocksInit));
+      brickBlocks = JSON.parse(JSON.stringify(brickBlocksInit));
       fireballs = [];
       powerups = [];
       waterballs = [];
@@ -1008,7 +1026,7 @@ function updatePlayer() {
 
   resolveCollisions(player, player.w, player.h);
 
-  // Q-block hit from below
+  // Block hits from below
   if (player.vy < 0) {
     for (const qb of qblocks) {
       if (qb.hit) continue;
@@ -1017,16 +1035,24 @@ function updatePlayer() {
         player.vy = 2;
         player.y = qb.y + qb.h;
         powerups.push({ x: qb.x + qb.w / 2, y: qb.y - 16, vy: -3, anim: 0, collected: false });
-        // Spawn break debris
         for (let i = 0; i < 6; i++) {
-          blockDebris.push({
-            x: qb.x + Math.random() * qb.w,
-            y: qb.y + Math.random() * qb.h,
-            vx: (Math.random() - 0.5) * 7,
-            vy: -Math.random() * 6 - 3,
-            life: 30 + Math.random() * 20 | 0,
-            size: 6 + Math.random() * 8 | 0,
-          });
+          blockDebris.push({ x: qb.x + Math.random() * qb.w, y: qb.y + Math.random() * qb.h,
+            vx: (Math.random() - 0.5) * 7, vy: -Math.random() * 6 - 3,
+            life: 30 + Math.random() * 20 | 0, size: 6 + Math.random() * 8 | 0, col: C.qblock.body });
+        }
+        sfxSquash();
+      }
+    }
+    for (const bb of brickBlocks) {
+      if (bb.broken) continue;
+      if (rectOverlap(player.x + 4, player.y, player.w - 8, 8, bb.x, bb.y + bb.h - 8, bb.w, 8)) {
+        bb.broken = true; bb.anim = 10;
+        player.vy = 2;
+        player.y = bb.y + bb.h;
+        for (let i = 0; i < 5; i++) {
+          blockDebris.push({ x: bb.x + Math.random() * bb.w, y: bb.y + Math.random() * bb.h,
+            vx: (Math.random() - 0.5) * 8, vy: -Math.random() * 7 - 2,
+            life: 22 + Math.random() * 18 | 0, size: 7 + Math.random() * 9 | 0, col: C.brick });
         }
         sfxSquash();
       }
@@ -1158,13 +1184,19 @@ function updateEnemies() {
       const overlapL   = (ex + EW) - p.x;
       const overlapR   = (p.x + p.w) - ex;
       const minOv = Math.min(overlapTop, overlapBot, overlapL, overlapR);
-      if (minOv === overlapTop && e.vy >= 0) {
-        e.y = p.y - 0;
-        e.vy = 0;
-        e.onGround = true;
-      } else if (minOv === overlapL || minOv === overlapR) {
-        e.dir *= -1;
-      }
+      if (minOv === overlapTop && e.vy >= 0) { e.y = p.y; e.vy = 0; e.onGround = true; }
+      else if (minOv === overlapL || minOv === overlapR) { e.dir *= -1; }
+    }
+    for (const bb of brickBlocks) {
+      if (bb.broken) continue;
+      const ex = e.x - EW/2, ey = e.y - EH;
+      if (!rectOverlap(ex, ey, EW, EH, bb.x, bb.y, bb.w, bb.h)) continue;
+      const overlapTop = (ey + EH) - bb.y;
+      const overlapL   = (ex + EW) - bb.x;
+      const overlapR   = (bb.x + bb.w) - ex;
+      const minOv = Math.min(overlapTop, overlapL, overlapR);
+      if (minOv === overlapTop && e.vy >= 0) { e.y = bb.y; e.vy = 0; e.onGround = true; }
+      else if (minOv === overlapL || minOv === overlapR) { e.dir *= -1; }
     }
 
     // Turn at level edges
@@ -1190,6 +1222,16 @@ function updateSpitters() {
         sp.y = p.y; sp.vy = 0; sp.onGround = true;
       }
     }
+    for (const bb of brickBlocks) {
+      if (bb.broken) continue;
+      const sx = sp.x - EW/2, sy = sp.y - EH;
+      if (!rectOverlap(sx, sy, EW, EH, bb.x, bb.y, bb.w, bb.h)) continue;
+      const overlapTop = (sy + EH) - bb.y;
+      const overlapBot = (bb.y + bb.h) - sy;
+      if (Math.min(overlapTop, overlapBot) === overlapTop && sp.vy >= 0) {
+        sp.y = bb.y; sp.vy = 0; sp.onGround = true;
+      }
+    }
     sp.dir = player.x < sp.x ? -1 : 1;
     sp.shootTimer--;
     if (sp.shootTimer <= 0 && Math.abs(sp.x - player.x) < W) {
@@ -1208,6 +1250,10 @@ function updateFireballs() {
     if (fb.x < camX - 80 || fb.x > camX + W + 80) { fb.alive = false; continue; }
     for (const p of platforms) {
       if (rectOverlap(fb.x - 8, fb.y - 8, 16, 16, p.x, p.y, p.w, p.h)) { fb.alive = false; break; }
+    }
+    if (!fb.alive) continue;
+    for (const bb of brickBlocks) {
+      if (!bb.broken && rectOverlap(fb.x - 8, fb.y - 8, 16, 16, bb.x, bb.y, bb.w, bb.h)) { fb.alive = false; break; }
     }
     if (!fb.alive) continue;
     if (!player.dead && player.invincible === 0 &&
@@ -1229,7 +1275,6 @@ function updateQBlocks() {
   for (const qb of qblocks) {
     if (qb.anim > 0) qb.anim--;
   }
-  // Remove fully-broken blocks after their bump animation finishes
   qblocks = qblocks.filter(qb => !(qb.hit && qb.anim === 0));
 
   // Update debris
@@ -1240,6 +1285,13 @@ function updateQBlocks() {
     d.life--;
   }
   blockDebris = blockDebris.filter(d => d.life > 0);
+}
+
+function updateBrickBlocks() {
+  for (const bb of brickBlocks) {
+    if (bb.anim > 0) bb.anim--;
+  }
+  brickBlocks = brickBlocks.filter(bb => !(bb.broken && bb.anim === 0));
 }
 
 function updatePowerups() {
@@ -1261,6 +1313,12 @@ function updatePowerups() {
         pu.y = qb.y - 12; pu.vy = 0;
       }
     }
+    for (const bb of brickBlocks) {
+      if (!bb.broken && pu.vy > 0 && pu.y + 12 >= bb.y && pu.y + 12 < bb.y + 16 &&
+          pu.x > bb.x - 10 && pu.x < bb.x + bb.w + 10) {
+        pu.y = bb.y - 12; pu.vy = 0;
+      }
+    }
     if (!player.dead &&
         rectOverlap(player.x - 4, player.y, player.w + 8, player.h, pu.x - 14, pu.y - 20, 28, 28)) {
       pu.collected = true;
@@ -1280,6 +1338,10 @@ function updateWaterballs() {
     if (wb.x < camX - 80 || wb.x > camX + W + 80) { wb.alive = false; continue; }
     for (const p of platforms) {
       if (rectOverlap(wb.x - 7, wb.y - 7, 14, 14, p.x, p.y, p.w, p.h)) { wb.alive = false; break; }
+    }
+    if (!wb.alive) continue;
+    for (const bb of brickBlocks) {
+      if (!bb.broken && rectOverlap(wb.x - 7, wb.y - 7, 14, 14, bb.x, bb.y, bb.w, bb.h)) { wb.alive = false; break; }
     }
     if (!wb.alive) continue;
     for (const e of enemies) {
@@ -1351,20 +1413,23 @@ function drawLevel(cx) {
         ctx.fillRect(px + i + 5, p.y + 18, 8, 4);
         ctx.fillRect(px + i + 20, p.y + 28, 6, 3);
       }
-    } else if (p.type === 'brick') {
-      // Brick pattern
-      ctx.fillStyle = C.brick;
-      ctx.fillRect(px, p.y, p.w, p.h);
-      ctx.fillStyle = C.brickShadow;
-      for (let i = 0; i < p.w; i += 20) {
-        ctx.fillRect(px + i, p.y, 2, p.h);
-      }
-      ctx.fillRect(px, p.y, p.w, 2);
-      ctx.fillRect(px, p.y + p.h - 2, p.w, 2);
-      // highlight
-      ctx.fillStyle = 'rgba(255,200,150,0.3)';
-      ctx.fillRect(px, p.y, p.w, 6);
     }
+  }
+
+  // Brick blocks
+  for (const bb of brickBlocks) {
+    if (bb.x - cx > W + 60 || bb.x + bb.w - cx < -60) continue;
+    const bx = bb.x - cx;
+    ctx.fillStyle = C.brick;
+    ctx.fillRect(bx, bb.y, bb.w, bb.h);
+    // mortar lines
+    ctx.fillStyle = C.brickShadow;
+    ctx.fillRect(bx, bb.y, bb.w, 2);
+    ctx.fillRect(bx, bb.y + bb.h - 2, bb.w, 2);
+    ctx.fillRect(bx, bb.y, 2, bb.h);
+    ctx.fillRect(bx + bb.w - 2, bb.y, 2, bb.h);
+    ctx.fillStyle = 'rgba(255,200,150,0.25)';
+    ctx.fillRect(bx, bb.y, bb.w, 6);
   }
 
   // Coins
@@ -1431,14 +1496,14 @@ function drawFireballs(cx) {
 }
 
 function drawQBlocks(cx) {
-  // Debris chunks
+  // Debris chunks (shared for both ? blocks and brick blocks)
   for (const d of blockDebris) {
     const fx = d.x - cx;
     if (fx < -20 || fx > W + 20) continue;
     ctx.globalAlpha = Math.min(1, d.life / 12);
-    ctx.fillStyle = C.qblock.body;
+    ctx.fillStyle = d.col || C.qblock.body;
     ctx.fillRect(fx - d.size / 2, d.y - d.size / 2, d.size, d.size);
-    ctx.fillStyle = C.qblock.shine;
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
     ctx.fillRect(fx - d.size / 2, d.y - d.size / 2, d.size, 2);
     ctx.globalAlpha = 1;
   }
@@ -1876,6 +1941,7 @@ function startGame() {
   enemies = JSON.parse(JSON.stringify(enemiesInit));
   spitters = JSON.parse(JSON.stringify(spittersInit));
   qblocks = JSON.parse(JSON.stringify(qblocksInit));
+  brickBlocks = JSON.parse(JSON.stringify(brickBlocksInit));
   fireballs = [];
   powerups = [];
   waterballs = [];
@@ -1938,6 +2004,7 @@ function gameLoop(timestamp) {
         updateSpitters();
         updateFireballs();
         updateQBlocks();
+        updateBrickBlocks();
         updatePowerups();
         updateWaterballs();
         break;
