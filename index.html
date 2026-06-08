@@ -774,18 +774,9 @@ brickPlatforms.forEach(p => {
 
 // ── Question blocks ───────────────────────────────────────────
 let qblocks = [
-  { x:  180, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
-  { x:  460, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
-  { x:  920, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
-  { x: 1360, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
-  { x: 1780, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
-  { x: 2150, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
-  { x: 2760, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
-  { x: 3230, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
-  { x: 3800, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
-  { x: 4350, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
-  { x: 4820, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
-  { x: 5350, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x:  320, y: H-220, w: 40, h: 40, hit: false, anim: 0 },  // early level, open ground
+  { x: 2730, y: H-220, w: 40, h: 40, hit: false, anim: 0 },  // mid level, between gaps
+  { x: 4850, y: H-220, w: 40, h: 40, hit: false, anim: 0 },  // late level, open ground
 ];
 const qblocksInit = JSON.parse(JSON.stringify(qblocks));
 let powerups  = [];
