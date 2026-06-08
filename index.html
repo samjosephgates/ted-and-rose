@@ -19,8 +19,6 @@
     display: block;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
-    border: 3px solid #444;
-    box-shadow: 0 0 40px rgba(0,200,255,0.3);
     touch-action: none;
   }
 </style>
@@ -40,9 +38,8 @@ const H = canvas.height;
 
 // Scale canvas to fit screen while preserving 16:9 internal resolution
 function fitCanvas() {
-  const scale = Math.min(window.innerWidth / W, window.innerHeight / H);
-  canvas.style.width  = Math.floor(W * scale) + 'px';
-  canvas.style.height = Math.floor(H * scale) + 'px';
+  canvas.style.width  = window.innerWidth  + 'px';
+  canvas.style.height = window.innerHeight + 'px';
 }
 window.addEventListener('resize', fitCanvas);
 fitCanvas();
