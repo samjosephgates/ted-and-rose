@@ -1372,13 +1372,6 @@ function drawWinScreen() {
   ctx.fillStyle = '#aef';
   ctx.fillText('Coins: ' + collected + ' / ' + coins.length, W/2, H/2 + 20);
 
-  // Celebrate characters
-  if (player.character === 'ted') {
-    drawTed(W/2, H/2 + 120, 2.5, false, winAnim);
-  } else {
-    drawRose(W/2, H/2 + 120, 2.5, false, winAnim);
-  }
-
   // Confetti
   for (let i = 0; i < 30; i++) {
     const cx2 = (i * 137 + winAnim * 2) % W;
