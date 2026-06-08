@@ -108,9 +108,9 @@ function refreshTouchStates(e) {
   for (const t of e.touches) {
     const p = getTouchCanvasPos(t);
     if (isTouchOnZoneBtn(p)) continue; // ignore touches on the toggle button
-    if (p.x < W / 4)                  touch.left  = true;
-    if (p.x >= W / 4 && p.x < W / 2) touch.right = true;
-    if (p.x >= W / 2)                 touch.jump  = true;
+    if (p.x < W * 0.15)                        touch.left  = true;
+    if (p.x >= W * 0.15 && p.x < W * 0.30)    touch.right = true;
+    if (p.x >= W * 0.30)                       touch.jump  = true;
   }
 }
 
@@ -1143,21 +1143,21 @@ function drawTouchControls() {
     ctx.save();
     ctx.globalAlpha = 0.12;
     ctx.fillStyle = '#ff4444';
-    ctx.fillRect(0, 0, W / 4, H);
+    ctx.fillRect(0, 0, W * 0.15, H);
     ctx.fillStyle = '#44ff44';
-    ctx.fillRect(W / 4, 0, W / 4, H);
+    ctx.fillRect(W * 0.15, 0, W * 0.15, H);
     ctx.fillStyle = '#4488ff';
-    ctx.fillRect(W / 2, 0, W / 2, H);
+    ctx.fillRect(W * 0.30, 0, W * 0.70, H);
     ctx.globalAlpha = 1;
     ctx.font = 'bold 36px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'rgba(255,80,80,0.6)';
-    ctx.fillText('◀', W / 8, H / 2);
+    ctx.fillText('◀', W * 0.075, H / 2);
     ctx.fillStyle = 'rgba(80,220,80,0.6)';
-    ctx.fillText('▶', W * 3 / 8, H / 2);
+    ctx.fillText('▶', W * 0.225, H / 2);
     ctx.fillStyle = 'rgba(80,140,255,0.6)';
-    ctx.fillText('▲', W * 3 / 4, H / 2);
+    ctx.fillText('▲', W * 0.65, H / 2);
     ctx.textBaseline = 'alphabetic';
     ctx.restore();
   }
