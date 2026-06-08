@@ -1174,7 +1174,7 @@ function drawEnemies(cx) {
   for (const e of enemies) {
     if (e.deadTimer <= 0 && e.dead) continue;
     if (e.x - cx < -60 || e.x - cx > W + 60) continue;
-    drawFrog(e.x - cx, e.y, 1.2, e.dir < 0, e.frame, e.dead);
+    drawFrog(e.x - cx, e.y - 17, 1.2, e.dir < 0, e.frame, e.dead);
   }
 }
 
@@ -1182,7 +1182,7 @@ function drawSpitters(cx) {
   for (const sp of spitters) {
     if (sp.deadTimer <= 0 && sp.dead) continue;
     if (sp.x - cx < -60 || sp.x - cx > W + 60) continue;
-    drawSpitter(sp.x - cx, sp.y, 1.2, sp.dir < 0, sp.frame, sp.dead);
+    drawSpitter(sp.x - cx, sp.y - 17, 1.2, sp.dir < 0, sp.frame, sp.dead);
   }
 }
 
