@@ -1332,16 +1332,7 @@ function drawSelectScreen() {
     }
   }
 
-  // Instructions
-  if (Math.floor(selectBlink / 25) % 2 === 0) {
-    ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 20px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('← → to choose     ENTER / A to confirm', W/2, H - 56);
-  }
-  ctx.fillStyle = 'rgba(255,255,255,0.4)';
-  ctx.font = '14px Courier New';
-  ctx.fillText('D-Pad or Arrow Keys  ·  Gamepad A / Enter', W/2, H - 32);
+
 }
 
 // ── WIN SCREEN ────────────────────────────────────────────────
@@ -1371,12 +1362,7 @@ function drawWinScreen() {
     ctx.fillRect(cx2, cy2, 6, 6);
   }
 
-  if (Math.floor(winAnim/25) % 2 === 0) {
-    ctx.fillStyle = '#00e5ff';
-    ctx.font = 'bold 20px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('ENTER / A  to play again', W/2, H/2 + 155);
-  }
+
 }
 
 // ── DEAD SCREEN ───────────────────────────────────────────────
@@ -1397,12 +1383,7 @@ function drawDeadScreen() {
   // Dead frog (ironic)
   drawFrog(W/2, H/2 + 100, 1.5, false, 0, true);
 
-  if (Math.floor(deadAnim/25) % 2 === 0) {
-    ctx.fillStyle = '#00e5ff';
-    ctx.font = 'bold 20px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('ENTER / A  to try again', W/2, H - 60);
-  }
+
 }
 
 // ============================================================
