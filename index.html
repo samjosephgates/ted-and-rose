@@ -1258,16 +1258,6 @@ function drawStartScreen() {
     ctx.fillText(hasTouchScreen ? 'TAP  ANYWHERE  TO  PLAY' : 'PRESS  START / ENTER  TO  PLAY', W/2, H - 80);
   }
 
-  // Controls hint
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.font = '14px Courier New';
-  ctx.textAlign = 'center';
-  if (hasTouchScreen) {
-    ctx.fillText('Tap  ◀ ▶  to move  ·  Tap  ▲  to jump', W/2, H - 48);
-  } else {
-    ctx.fillText('Arrow Keys / WASD / Gamepad  ·  Space / A button to jump', W/2, H - 48);
-  }
-
   // Frog cameo bottom
   drawFrog(W/2, H - 32, 0.9, false, titleCharAnim, false);
 }
