@@ -355,6 +355,7 @@ const C = {
   ted: { body:'#e8c090', shirt:'#ff6699', pants:'#1a3a80', shoes:'#2a1a0a', hair:'#8B4513', eyes:'#1a1a6a' },
   rose: { body:'#f0b8a0', dress:'#8833cc', shoes:'#5511aa', hair:'#f5d020', eyes:'#6a1a4a', bow:'#ff66bb' },
   frog: { body:'#2daa44', belly:'#a0e080', eye:'#ffe000', pupil:'#1a1a1a', tongue:'#ff4466' },
+  redfrog: { body:'#cc2200', belly:'#ff8866', eye:'#ffe000', pupil:'#1a1a1a' },
   ui: { panel:'rgba(0,0,30,0.85)', border:'#00e5ff', text:'#ffffff', accent:'#FFD700', shadow:'rgba(0,0,0,0.7)' }
 };
 
@@ -546,6 +547,52 @@ function drawFrog(x, y, scale=1, flip=false, frame=0, isDead=false) {
   ctx.restore();
 }
 
+// ── Spitter (red fire-spitting frog) ────────────────────────
+function drawSpitter(x, y, scale=1, flip=false, frame=0, isDead=false) {
+  ctx.save();
+  ctx.translate(x, y);
+  if (flip) ctx.scale(-1, 1);
+  const s = scale;
+  const f = C.redfrog;
+  if (isDead) {
+    drawRoundRect(-14*s, -4*s, 28*s, 10*s, 4*s, f.body);
+    ctx.fillStyle = f.belly;
+    ctx.fillRect(-8*s, -2*s, 16*s, 6*s);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2*s;
+    ctx.beginPath(); ctx.moveTo(-6*s,-6*s); ctx.lineTo(-2*s,-2*s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-2*s,-6*s); ctx.lineTo(-6*s,-2*s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( 2*s,-6*s); ctx.lineTo( 6*s,-2*s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( 6*s,-6*s); ctx.lineTo( 2*s,-2*s); ctx.stroke();
+    ctx.restore();
+    return;
+  }
+  const hop = Math.abs(Math.sin(frame * 0.04)) * 3 * s;
+  ctx.fillStyle = f.body;
+  ctx.fillRect(-14*s, 4*s - hop*0.5, 6*s, 8*s + hop*0.5);
+  ctx.fillRect(  8*s, 4*s - hop*0.5, 6*s, 8*s + hop*0.5);
+  ctx.fillRect(-18*s, 10*s, 8*s, 4*s);
+  ctx.fillRect( 10*s, 10*s, 8*s, 4*s);
+  drawRoundRect(-12*s, -6*s - hop, 24*s, 18*s, 6*s, f.body);
+  ctx.fillStyle = f.belly;
+  drawRoundRect(-7*s, -2*s - hop, 14*s, 10*s, 4*s, f.belly);
+  ctx.fillStyle = f.body;
+  ctx.beginPath(); ctx.arc(-7*s, -8*s - hop, 5*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( 7*s, -8*s - hop, 5*s, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = f.eye;
+  ctx.beginPath(); ctx.arc(-7*s, -8*s - hop, 3*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( 7*s, -8*s - hop, 3*s, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = f.pupil;
+  ctx.beginPath(); ctx.arc(-6*s, -8*s - hop, 1.5*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( 6*s, -8*s - hop, 1.5*s, 0, Math.PI*2); ctx.fill();
+  // glowing mouth
+  ctx.fillStyle = '#ff6600';
+  ctx.fillRect(-5*s, 4*s - hop, 10*s, 3*s);
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillRect(-3*s, 5*s - hop, 6*s, 1.5*s);
+  ctx.restore();
+}
+
 // ── Cloud ────────────────────────────────────────────────────
 function drawCloud(x, y, w) {
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -674,6 +721,18 @@ let enemies = [
 ];
 let enemiesInit = JSON.parse(JSON.stringify(enemies));
 
+// ── Spitter enemies (red fire-spitting frogs) ─────────────────
+let spitters = [
+  { x:  580, y: H-80, vx:0, vy:0, onGround:false, dir:-1, frame:0, dead:false, deadTimer:0, shootTimer:140 },
+  { x: 1650, y: H-80, vx:0, vy:0, onGround:false, dir:-1, frame:0, dead:false, deadTimer:0, shootTimer: 80 },
+  { x: 2350, y: H-80, vx:0, vy:0, onGround:false, dir: 1, frame:0, dead:false, deadTimer:0, shootTimer:120 },
+  { x: 3050, y: H-80, vx:0, vy:0, onGround:false, dir:-1, frame:0, dead:false, deadTimer:0, shootTimer:100 },
+  { x: 4050, y: H-80, vx:0, vy:0, onGround:false, dir: 1, frame:0, dead:false, deadTimer:0, shootTimer: 60 },
+  { x: 4750, y: H-80, vx:0, vy:0, onGround:false, dir:-1, frame:0, dead:false, deadTimer:0, shootTimer: 90 },
+  { x: 5450, y: H-80, vx:0, vy:0, onGround:false, dir:-1, frame:0, dead:false, deadTimer:0, shootTimer:110 },
+];
+let spittersInit = JSON.parse(JSON.stringify(spitters));
+
 // ── Coins ─────────────────────────────────────────────────────
 let coins = [];
 // Coins placed 20px above the surface of their platform (platform.y - 20)
@@ -713,6 +772,7 @@ function resetCoins() {
   coins = coinPositions.map(([x,y]) => ({ x, y, collected: false, anim: 0 }));
 }
 resetCoins();
+let fireballs = [];
 
 // ── Decorations ──────────────────────────────────────────────
 const clouds = [
@@ -822,6 +882,8 @@ function updatePlayer() {
       if (player.lives <= 0) { gameState = STATE.DEAD; stopMusic(); return; }
       resetPlayer();
       enemies = JSON.parse(JSON.stringify(enemiesInit));
+      spitters = JSON.parse(JSON.stringify(spittersInit));
+      fireballs = [];
       resetCoins();
       camX = 0;
     }
@@ -910,6 +972,22 @@ function updatePlayer() {
     }
   }
 
+  // Spitter collision
+  for (const sp of spitters) {
+    if (sp.dead) continue;
+    const EW = 28, EH = 24;
+    if (!rectOverlap(player.x, player.y, player.w, player.h, sp.x - EW/2, sp.y - EH, EW, EH)) continue;
+    const playerBottom = player.y + player.h;
+    if (player.vy > 0 && playerBottom < sp.y - 2) {
+      sp.dead = true; sp.deadTimer = 60;
+      player.vy = -8;
+      player.score += 300;
+      sfxSquash();
+    } else {
+      if (player.invincible === 0) { player.dead = true; player.deadTimer = 80; sfxDie(); }
+    }
+  }
+
   // Goal check
   if (player.x + player.w >= GOAL_X - 10) {
     gameState = STATE.WIN;
@@ -952,6 +1030,53 @@ function updateEnemies() {
     // Turn at level edges
     if (e.x < 20 || e.x > LEVEL_W - 20) e.dir *= -1;
   }
+}
+
+function updateSpitters() {
+  const EW = 28, EH = 24;
+  for (const sp of spitters) {
+    if (sp.dead) { sp.deadTimer--; continue; }
+    sp.frame++;
+    sp.vy += GRAVITY;
+    if (sp.vy > 18) sp.vy = 18;
+    sp.y += sp.vy;
+    sp.onGround = false;
+    for (const p of platforms) {
+      const sx = sp.x - EW/2, sy = sp.y - EH;
+      if (!rectOverlap(sx, sy, EW, EH, p.x, p.y, p.w, p.h)) continue;
+      const overlapTop = (sy + EH) - p.y;
+      const overlapBot = (p.y + p.h) - sy;
+      if (Math.min(overlapTop, overlapBot) === overlapTop && sp.vy >= 0) {
+        sp.y = p.y; sp.vy = 0; sp.onGround = true;
+      }
+    }
+    sp.dir = player.x < sp.x ? -1 : 1;
+    sp.shootTimer--;
+    if (sp.shootTimer <= 0 && Math.abs(sp.x - player.x) < W) {
+      sp.shootTimer = 90 + Math.floor(Math.random() * 70);
+      fireballs.push({ x: sp.x + sp.dir * 16, y: sp.y - 12, vx: sp.dir * 5, anim: 0, alive: true });
+    }
+    if (sp.y > H + 100) { sp.dead = true; sp.deadTimer = 1; }
+  }
+}
+
+function updateFireballs() {
+  for (const fb of fireballs) {
+    if (!fb.alive) continue;
+    fb.anim++;
+    fb.x += fb.vx;
+    if (fb.x < camX - 80 || fb.x > camX + W + 80) { fb.alive = false; continue; }
+    for (const p of platforms) {
+      if (rectOverlap(fb.x - 8, fb.y - 8, 16, 16, p.x, p.y, p.w, p.h)) { fb.alive = false; break; }
+    }
+    if (!fb.alive) continue;
+    if (!player.dead && player.invincible === 0 &&
+        rectOverlap(player.x, player.y, player.w, player.h, fb.x - 8, fb.y - 8, 16, 16)) {
+      fb.alive = false;
+      player.dead = true; player.deadTimer = 80; sfxDie();
+    }
+  }
+  if (fireballs.length > 80) fireballs = fireballs.filter(fb => fb.alive);
 }
 
 // ============================================================
@@ -1050,6 +1175,34 @@ function drawEnemies(cx) {
     if (e.deadTimer <= 0 && e.dead) continue;
     if (e.x - cx < -60 || e.x - cx > W + 60) continue;
     drawFrog(e.x - cx, e.y, 1.2, e.dir < 0, e.frame, e.dead);
+  }
+}
+
+function drawSpitters(cx) {
+  for (const sp of spitters) {
+    if (sp.deadTimer <= 0 && sp.dead) continue;
+    if (sp.x - cx < -60 || sp.x - cx > W + 60) continue;
+    drawSpitter(sp.x - cx, sp.y, 1.2, sp.dir < 0, sp.frame, sp.dead);
+  }
+}
+
+function drawFireballs(cx) {
+  for (const fb of fireballs) {
+    if (!fb.alive) continue;
+    const fx = fb.x - cx;
+    if (fx < -30 || fx > W + 30) continue;
+    const flicker = 0.7 + 0.3 * Math.sin(fb.anim * 0.5);
+    ctx.save();
+    ctx.globalAlpha = flicker * 0.55;
+    ctx.fillStyle = '#ff6400';
+    ctx.beginPath(); ctx.arc(fx, fb.y, 12, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = flicker;
+    ctx.fillStyle = '#ffa000';
+    ctx.beginPath(); ctx.arc(fx, fb.y, 8, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fff8cc';
+    ctx.beginPath(); ctx.arc(fx, fb.y, 4, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
   }
 }
 
@@ -1441,6 +1594,8 @@ function handleMenuEnter() {
 
 function startGame() {
   enemies = JSON.parse(JSON.stringify(enemiesInit));
+  spitters = JSON.parse(JSON.stringify(spittersInit));
+  fireballs = [];
   resetCoins();
   resetPlayer();
   camX = 0;
@@ -1496,6 +1651,8 @@ function gameLoop(timestamp) {
         updateCamera();
         updatePlayer();
         updateEnemies();
+        updateSpitters();
+        updateFireballs();
         break;
 
       case STATE.WIN:
@@ -1532,6 +1689,8 @@ function gameLoop(timestamp) {
       drawBackground();
       drawLevel(camX);
       drawEnemies(camX);
+      drawSpitters(camX);
+      drawFireballs(camX);
       drawPlayerSprite(camX);
       drawHUD();
       drawProgress();
