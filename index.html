@@ -1137,14 +1137,14 @@ function drawTouchControls() {
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.fillStyle = active ? '#fff' : 'rgba(255,255,255,0.5)';
-    ctx.font = 'bold 28px Arial';
+    ctx.font = 'bold 18px Arial';
     ctx.fillText(label, cx, cy);
   }
 
   const bh = 56, bw = 80, by = H - 80;
-  drawZoneBtn('◀', W * 0.075, by, bw, bh, touch.left);
-  drawZoneBtn('▶', W * 0.225, by, bw, bh, touch.right);
-  drawZoneBtn('▲', W * 0.65,  by, bw, bh, touch.jump);
+  drawZoneBtn('LEFT',  W * 0.075, by, bw, bh, touch.left);
+  drawZoneBtn('RIGHT', W * 0.225, by, bw, bh, touch.right);
+  drawZoneBtn('JUMP',  W * 0.65,  by, bw, bh, touch.jump);
 
   ctx.textBaseline = 'alphabetic';
   ctx.restore();
