@@ -1306,9 +1306,9 @@ function drawSelectScreen() {
 
     // Character sprite (big)
     if (i === 0) {
-      drawTed (cx2, 310, 2.8, false, isSelected ? charAnimFrame : 0);
+      drawTed (cx2, 255, 2.8, false, isSelected ? charAnimFrame : 0);
     } else {
-      drawRose(cx2, 310, 2.8, false, isSelected ? charAnimFrame : 0);
+      drawRose(cx2, 255, 2.8, false, isSelected ? charAnimFrame : 0);
     }
 
     // Name
@@ -1317,27 +1317,27 @@ function drawSelectScreen() {
     ctx.fillStyle = isSelected ? '#FFD700' : '#aaa';
     ctx.shadowColor = isSelected ? '#FFD700' : 'transparent';
     ctx.shadowBlur = isSelected ? 15 : 0;
-    ctx.fillText(names[i], cx2, 370);
+    ctx.fillText(names[i], cx2, 285);
     ctx.shadowBlur = 0;
 
     // Description
     ctx.font = '13px Courier New';
     ctx.fillStyle = isSelected ? '#cce6ff' : '#666';
     if (i === 0) {
-      ctx.fillText('Brave & Bold', cx2, 398);
-      ctx.fillText('Speed: ★★★★', cx2, 418);
-      ctx.fillText('Jump:  ★★★', cx2, 438);
+      ctx.fillText('Brave & Bold', cx2, 313);
+      ctx.fillText('Speed: ★★★★', cx2, 333);
+      ctx.fillText('Jump:  ★★★', cx2, 353);
     } else {
-      ctx.fillText('Agile & Clever', cx2, 398);
-      ctx.fillText('Speed: ★★★', cx2, 418);
-      ctx.fillText('Jump:  ★★★★★', cx2, 438);
+      ctx.fillText('Agile & Clever', cx2, 313);
+      ctx.fillText('Speed: ★★★', cx2, 333);
+      ctx.fillText('Jump:  ★★★★★', cx2, 353);
     }
 
     // Selection arrow
     if (isSelected && Math.floor(selectBlink/15) % 2 === 0) {
       ctx.fillStyle = '#FFD700';
       ctx.font = '28px Courier New';
-      ctx.fillText('▼', cx2, 465);
+      ctx.fillText('▼', cx2, 378);
     }
   }
 
