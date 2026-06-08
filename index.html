@@ -83,7 +83,7 @@ window.addEventListener('gamepaddisconnected', e => { gamepad = null; });
 
 // ── Touch controls ────────────────────────────────────────────
 let hasTouchScreen = false; // set true only after a real touch event fires
-const touch = { left: false, right: false, jump: false, anyTap: false };
+const touch = { left: false, right: false, jump: false, fire: false, anyTap: false };
 
 // Button centers and hit radius in canvas pixels
 const TC = {
@@ -101,12 +101,16 @@ function getTouchCanvasPos(t) {
 }
 
 function refreshTouchStates(e) {
-  touch.left = false; touch.right = false; touch.jump = false;
+  touch.left = false; touch.right = false; touch.jump = false; touch.fire = false;
   for (const t of e.touches) {
     const p = getTouchCanvasPos(t);
     if (p.x < W * 0.15)                        touch.left  = true;
     if (p.x >= W * 0.15 && p.x < W * 0.30)    touch.right = true;
-    if (p.x >= W * 0.30)                       touch.jump  = true;
+    if (p.x >= W * 0.30 && p.x < W * 0.75)    touch.jump  = true;
+    if (p.x >= W * 0.75) {
+      if (player.hasWaterShot) touch.fire = true;
+      else touch.jump = true;
+    }
   }
 }
 
@@ -126,7 +130,7 @@ canvas.addEventListener('touchend', e => {
   if (e.touches.length === 0) { touch.anyTap = false; }
 }, { passive: false });
 canvas.addEventListener('touchcancel', e => {
-  touch.left = false; touch.right = false; touch.jump = false; touch.anyTap = false;
+  touch.left = false; touch.right = false; touch.jump = false; touch.fire = false; touch.anyTap = false;
 }, { passive: false });
 
 // ── Audio ─────────────────────────────────────────────────────
@@ -349,6 +353,7 @@ function isJump()   { return keys['Space'] || keys['ArrowUp'] || keys['KeyW'] ||
 function isSelect() { return keys['Enter'] || keys['Space'] || gpJustPressed(0) || gpJustPressed(9); }
 function isLeft1()  { return keys['ArrowLeft'] || keys['KeyA'] || gpAxis(0) < -0.4 || gpButton(14) || touch.left; }
 function isRight1() { return keys['ArrowRight']|| keys['KeyD']|| gpAxis(0) >  0.4 || gpButton(15) || touch.right; }
+function isFire()   { return keys['KeyZ'] || keys['KeyX'] || gpButton(2) || gpButton(3) || touch.fire; }
 
 // ── Palette ──────────────────────────────────────────────────
 const C = {
@@ -360,6 +365,8 @@ const C = {
   rose: { body:'#f0b8a0', dress:'#8833cc', shoes:'#5511aa', hair:'#f5d020', eyes:'#6a1a4a', bow:'#ff66bb' },
   frog: { body:'#2daa44', belly:'#a0e080', eye:'#ffe000', pupil:'#1a1a1a', tongue:'#ff4466' },
   redfrog: { body:'#cc2200', belly:'#ff8866', eye:'#ffe000', pupil:'#1a1a1a' },
+  water:  { ball:'#44aaff', glow:'#88ddff' },
+  qblock: { body:'#e8a000', shine:'#ffd040', shadow:'#b06800', used:'#8a7030' },
   ui: { panel:'rgba(0,0,30,0.85)', border:'#00e5ff', text:'#ffffff', accent:'#FFD700', shadow:'rgba(0,0,0,0.7)' }
 };
 
@@ -597,6 +604,63 @@ function drawSpitter(x, y, scale=1, flip=false, frame=0, isDead=false) {
   ctx.restore();
 }
 
+// ── Question block ───────────────────────────────────────────
+function drawQBlock(x, y, w, h, used) {
+  ctx.fillStyle = used ? C.qblock.used : C.qblock.body;
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = used ? '#6a5820' : C.qblock.shadow;
+  ctx.fillRect(x, y + h - 4, w, 4);
+  ctx.fillRect(x + w - 4, y, 4, h);
+  ctx.fillStyle = used ? '#c0a060' : C.qblock.shine;
+  ctx.fillRect(x, y, w, 4);
+  ctx.fillRect(x, y, 4, h);
+  if (!used) {
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.floor(h * 0.6)}px Courier New`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('?', x + w/2, y + h/2 + 2);
+    ctx.textBaseline = 'alphabetic';
+  }
+}
+
+// ── Water drop power-up ───────────────────────────────────────
+function drawWaterDrop(x, y, anim) {
+  const bob = Math.sin(anim * 0.1) * 3;
+  const yy = y + bob;
+  ctx.save();
+  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = C.water.glow;
+  ctx.beginPath(); ctx.arc(x, yy, 14, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = C.water.ball;
+  ctx.beginPath(); ctx.arc(x, yy + 3, 9, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x, yy - 11);
+  ctx.lineTo(x - 7, yy + 1);
+  ctx.lineTo(x + 7, yy + 1);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.beginPath(); ctx.arc(x - 3, yy - 2, 3, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+// ── Water ball projectile ─────────────────────────────────────
+function drawWaterBall(x, y, anim) {
+  const fl = 0.8 + 0.2 * Math.sin(anim * 0.4);
+  ctx.save();
+  ctx.globalAlpha = fl * 0.45;
+  ctx.fillStyle = C.water.glow;
+  ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = fl;
+  ctx.fillStyle = C.water.ball;
+  ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(x - 2, y - 2, 3, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
 // ── Cloud ────────────────────────────────────────────────────
 function drawCloud(x, y, w) {
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
@@ -708,6 +772,25 @@ brickPlatforms.forEach(p => {
   platforms.push({ x: p.x, y: p.y, w: p.w, h: p.h, type: 'brick' });
 });
 
+// ── Question blocks ───────────────────────────────────────────
+let qblocks = [
+  { x:  180, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x:  460, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x:  920, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x: 1360, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x: 1780, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x: 2150, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x: 2760, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x: 3230, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x: 3800, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x: 4350, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x: 4820, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+  { x: 5350, y: H-200, w: 40, h: 40, hit: false, anim: 0 },
+];
+const qblocksInit = JSON.parse(JSON.stringify(qblocks));
+let powerups  = [];
+let waterballs = [];
+
 // ── Enemies (frogs) ──────────────────────────────────────────
 let enemies = [
   { x: 700,   y: H-80,  vx: 1.2,  vy: 0, onGround: false, dir: 1, frame: 0, dead: false, deadTimer: 0 },
@@ -816,6 +899,9 @@ let player = {
   invincible: 0,
   dead: false,
   deadTimer: 0,
+  hasWaterShot: false,
+  firePressed: false,
+  fireCooldown: 0,
 };
 
 function resetPlayer() {
@@ -826,6 +912,9 @@ function resetPlayer() {
   player.jumpPressed = false;
   player.invincible = 0;
   player.dead = false; player.deadTimer = 0;
+  player.hasWaterShot = false;
+  player.firePressed = false;
+  player.fireCooldown = 0;
 }
 
 // ============================================================
@@ -887,7 +976,10 @@ function updatePlayer() {
       resetPlayer();
       enemies = JSON.parse(JSON.stringify(enemiesInit));
       spitters = JSON.parse(JSON.stringify(spittersInit));
+      qblocks = JSON.parse(JSON.stringify(qblocksInit));
       fireballs = [];
+      powerups = [];
+      waterballs = [];
       resetCoins();
       camX = 0;
     }
@@ -922,6 +1014,20 @@ function updatePlayer() {
   if (player.x + player.w > LEVEL_W) { player.x = LEVEL_W - player.w; player.vx = 0; }
 
   resolveCollisions(player, player.w, player.h);
+
+  // Q-block hit from below
+  if (player.vy < 0) {
+    for (const qb of qblocks) {
+      if (qb.hit) continue;
+      if (rectOverlap(player.x + 4, player.y, player.w - 8, 8, qb.x, qb.y + qb.h - 8, qb.w, 8)) {
+        qb.hit = true; qb.anim = 10;
+        player.vy = 2;
+        player.y = qb.y + qb.h;
+        powerups.push({ x: qb.x + qb.w / 2, y: qb.y - 16, vy: -3, anim: 0, collected: false });
+        sfxSquash();
+      }
+    }
+  }
 
   // Fell off screen
   if (player.y > H + 100) {
@@ -990,6 +1096,18 @@ function updatePlayer() {
     } else {
       if (player.invincible === 0) { player.dead = true; player.deadTimer = 80; sfxDie(); }
     }
+  }
+
+  // Fire water ball
+  if (player.hasWaterShot) {
+    if (player.fireCooldown > 0) player.fireCooldown--;
+    const fireNow = isFire();
+    if (fireNow && !player.firePressed && player.fireCooldown === 0) {
+      const dir = player.facingLeft ? -1 : 1;
+      waterballs.push({ x: player.x + (dir > 0 ? player.w + 4 : -4), y: player.y + player.h * 0.4, vx: dir * 10, anim: 0, alive: true });
+      player.fireCooldown = 18;
+    }
+    player.firePressed = fireNow;
   }
 
   // Goal check
@@ -1081,6 +1199,73 @@ function updateFireballs() {
     }
   }
   if (fireballs.length > 80) fireballs = fireballs.filter(fb => fb.alive);
+}
+
+function updateQBlocks() {
+  for (const qb of qblocks) {
+    if (qb.anim > 0) qb.anim--;
+  }
+}
+
+function updatePowerups() {
+  for (const pu of powerups) {
+    if (pu.collected) continue;
+    pu.anim++;
+    pu.vy += 0.28;
+    if (pu.vy > 3) pu.vy = 3;
+    pu.y += pu.vy;
+    for (const p of platforms) {
+      if (pu.vy > 0 && pu.y + 12 >= p.y && pu.y + 12 < p.y + 16 &&
+          pu.x > p.x - 10 && pu.x < p.x + p.w + 10) {
+        pu.y = p.y - 12; pu.vy = 0;
+      }
+    }
+    for (const qb of qblocks) {
+      if (pu.vy > 0 && pu.y + 12 >= qb.y && pu.y + 12 < qb.y + 16 &&
+          pu.x > qb.x - 10 && pu.x < qb.x + qb.w + 10) {
+        pu.y = qb.y - 12; pu.vy = 0;
+      }
+    }
+    if (!player.dead &&
+        rectOverlap(player.x - 4, player.y, player.w + 8, player.h, pu.x - 14, pu.y - 20, 28, 28)) {
+      pu.collected = true;
+      player.hasWaterShot = true;
+      sfxCoin();
+    }
+    if (pu.y > H + 100) pu.collected = true;
+  }
+  powerups = powerups.filter(pu => !pu.collected);
+}
+
+function updateWaterballs() {
+  for (const wb of waterballs) {
+    if (!wb.alive) continue;
+    wb.anim++;
+    wb.x += wb.vx;
+    if (wb.x < camX - 80 || wb.x > camX + W + 80) { wb.alive = false; continue; }
+    for (const p of platforms) {
+      if (rectOverlap(wb.x - 7, wb.y - 7, 14, 14, p.x, p.y, p.w, p.h)) { wb.alive = false; break; }
+    }
+    if (!wb.alive) continue;
+    for (const e of enemies) {
+      if (e.dead) continue;
+      const EW = 28, EH = 24;
+      if (rectOverlap(wb.x - 7, wb.y - 7, 14, 14, e.x - EW/2, e.y - EH, EW, EH)) {
+        wb.alive = false; e.dead = true; e.deadTimer = 60;
+        player.score += 200; sfxSquash(); break;
+      }
+    }
+    if (!wb.alive) continue;
+    for (const sp of spitters) {
+      if (sp.dead) continue;
+      const EW = 28, EH = 24;
+      if (rectOverlap(wb.x - 7, wb.y - 7, 14, 14, sp.x - EW/2, sp.y - EH, EW, EH)) {
+        wb.alive = false; sp.dead = true; sp.deadTimer = 60;
+        player.score += 300; sfxSquash(); break;
+      }
+    }
+  }
+  if (waterballs.length > 20) waterballs = waterballs.filter(wb => wb.alive);
 }
 
 // ============================================================
@@ -1210,6 +1395,32 @@ function drawFireballs(cx) {
   }
 }
 
+function drawQBlocks(cx) {
+  for (const qb of qblocks) {
+    if (qb.x - cx > W + 60 || qb.x + qb.w - cx < -60) continue;
+    const bump = qb.anim > 0 ? Math.sin((10 - qb.anim) / 10 * Math.PI) * 6 : 0;
+    drawQBlock(qb.x - cx, qb.y - bump, qb.w, qb.h, qb.hit);
+  }
+}
+
+function drawPowerups(cx) {
+  for (const pu of powerups) {
+    if (pu.collected) continue;
+    const fx = pu.x - cx;
+    if (fx < -30 || fx > W + 30) continue;
+    drawWaterDrop(fx, pu.y, pu.anim);
+  }
+}
+
+function drawWaterballs(cx) {
+  for (const wb of waterballs) {
+    if (!wb.alive) continue;
+    const fx = wb.x - cx;
+    if (fx < -30 || fx > W + 30) continue;
+    drawWaterBall(fx, wb.y, wb.anim);
+  }
+}
+
 function drawPlayerSprite(cx) {
   if (player.dead) return;
   if (player.invincible > 0 && Math.floor(player.invincible / 4) % 2 === 0) return;
@@ -1264,6 +1475,20 @@ function drawHUD() {
   ctx.textAlign = 'right';
   ctx.fillText('🪙 x ' + collected, W - 20, 42);
 
+  // Water shot power-up indicator
+  if (player.hasWaterShot) {
+    ctx.fillStyle = 'rgba(0,60,160,0.85)';
+    ctx.fillRect(10, 50, 130, 22);
+    ctx.fillStyle = '#44aaff';
+    ctx.beginPath(); ctx.arc(24, 61, 7, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(21, 58, 3, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#88ddff';
+    ctx.font = 'bold 13px Courier New';
+    ctx.textAlign = 'left';
+    ctx.fillText('WATER SHOT', 35, 65);
+  }
+
   ctx.restore();
 }
 
@@ -1302,7 +1527,12 @@ function drawTouchControls() {
   const bh = 56, bw = 80, by = H - 80;
   drawZoneBtn('LEFT',  W * 0.075, by, bw, bh, touch.left);
   drawZoneBtn('RIGHT', W * 0.225, by, bw, bh, touch.right);
-  drawZoneBtn('JUMP',  W - bw/2 - 40, by, bw, bh, touch.jump);
+  if (player.hasWaterShot) {
+    drawZoneBtn('JUMP', W * 0.55, by, bw, bh, touch.jump);
+    drawZoneBtn('FIRE', W - bw/2 - 20, by, bw, bh, touch.fire);
+  } else {
+    drawZoneBtn('JUMP', W - bw/2 - 40, by, bw, bh, touch.jump);
+  }
 
   ctx.textBaseline = 'alphabetic';
   ctx.restore();
@@ -1599,7 +1829,10 @@ function handleMenuEnter() {
 function startGame() {
   enemies = JSON.parse(JSON.stringify(enemiesInit));
   spitters = JSON.parse(JSON.stringify(spittersInit));
+  qblocks = JSON.parse(JSON.stringify(qblocksInit));
   fireballs = [];
+  powerups = [];
+  waterballs = [];
   resetCoins();
   resetPlayer();
   camX = 0;
@@ -1657,6 +1890,9 @@ function gameLoop(timestamp) {
         updateEnemies();
         updateSpitters();
         updateFireballs();
+        updateQBlocks();
+        updatePowerups();
+        updateWaterballs();
         break;
 
       case STATE.WIN:
@@ -1692,9 +1928,12 @@ function gameLoop(timestamp) {
     case STATE.PLAYING:
       drawBackground();
       drawLevel(camX);
+      drawQBlocks(camX);
       drawEnemies(camX);
       drawSpitters(camX);
       drawFireballs(camX);
+      drawWaterballs(camX);
+      drawPowerups(camX);
       drawPlayerSprite(camX);
       drawHUD();
       drawProgress();
