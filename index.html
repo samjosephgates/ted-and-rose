@@ -862,6 +862,7 @@ function updatePlayer() {
   if (player.y > H + 100) {
     player.dead = true;
     player.deadTimer = 90;
+    sfxDie();
   }
 
   // Animation
