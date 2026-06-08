@@ -781,6 +781,7 @@ let qblocks = [
 const qblocksInit = JSON.parse(JSON.stringify(qblocks));
 let powerups  = [];
 let waterballs = [];
+let blockDebris = [];
 
 // ── Enemies (frogs) ──────────────────────────────────────────
 let enemies = [
@@ -971,6 +972,7 @@ function updatePlayer() {
       fireballs = [];
       powerups = [];
       waterballs = [];
+      blockDebris = [];
       resetCoins();
       camX = 0;
     }
@@ -1011,10 +1013,21 @@ function updatePlayer() {
     for (const qb of qblocks) {
       if (qb.hit) continue;
       if (rectOverlap(player.x + 4, player.y, player.w - 8, 8, qb.x, qb.y + qb.h - 8, qb.w, 8)) {
-        qb.hit = true; qb.anim = 10;
+        qb.hit = true; qb.anim = 14;
         player.vy = 2;
         player.y = qb.y + qb.h;
         powerups.push({ x: qb.x + qb.w / 2, y: qb.y - 16, vy: -3, anim: 0, collected: false });
+        // Spawn break debris
+        for (let i = 0; i < 6; i++) {
+          blockDebris.push({
+            x: qb.x + Math.random() * qb.w,
+            y: qb.y + Math.random() * qb.h,
+            vx: (Math.random() - 0.5) * 7,
+            vy: -Math.random() * 6 - 3,
+            life: 30 + Math.random() * 20 | 0,
+            size: 6 + Math.random() * 8 | 0,
+          });
+        }
         sfxSquash();
       }
     }
@@ -1216,6 +1229,17 @@ function updateQBlocks() {
   for (const qb of qblocks) {
     if (qb.anim > 0) qb.anim--;
   }
+  // Remove fully-broken blocks after their bump animation finishes
+  qblocks = qblocks.filter(qb => !(qb.hit && qb.anim === 0));
+
+  // Update debris
+  for (const d of blockDebris) {
+    d.x += d.vx;
+    d.vy += 0.45;
+    d.y += d.vy;
+    d.life--;
+  }
+  blockDebris = blockDebris.filter(d => d.life > 0);
 }
 
 function updatePowerups() {
@@ -1407,9 +1431,20 @@ function drawFireballs(cx) {
 }
 
 function drawQBlocks(cx) {
+  // Debris chunks
+  for (const d of blockDebris) {
+    const fx = d.x - cx;
+    if (fx < -20 || fx > W + 20) continue;
+    ctx.globalAlpha = Math.min(1, d.life / 12);
+    ctx.fillStyle = C.qblock.body;
+    ctx.fillRect(fx - d.size / 2, d.y - d.size / 2, d.size, d.size);
+    ctx.fillStyle = C.qblock.shine;
+    ctx.fillRect(fx - d.size / 2, d.y - d.size / 2, d.size, 2);
+    ctx.globalAlpha = 1;
+  }
   for (const qb of qblocks) {
     if (qb.x - cx > W + 60 || qb.x + qb.w - cx < -60) continue;
-    const bump = qb.anim > 0 ? Math.sin((10 - qb.anim) / 10 * Math.PI) * 6 : 0;
+    const bump = qb.anim > 0 ? Math.sin((14 - qb.anim) / 14 * Math.PI) * 8 : 0;
     drawQBlock(qb.x - cx, qb.y - bump, qb.w, qb.h, qb.hit);
   }
 }
@@ -1844,6 +1879,7 @@ function startGame() {
   fireballs = [];
   powerups = [];
   waterballs = [];
+  blockDebris = [];
   resetCoins();
   resetPlayer();
   camX = 0;
