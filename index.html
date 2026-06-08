@@ -1066,9 +1066,15 @@ function updatePlayer() {
     } else {
       // take damage
       if (player.invincible === 0) {
-        player.dead = true;
-        player.deadTimer = 80;
-        sfxDie();
+        if (player.hasWaterShot) {
+          player.hasWaterShot = false;
+          player.invincible = 90;
+          sfxSquash();
+        } else {
+          player.dead = true;
+          player.deadTimer = 80;
+          sfxDie();
+        }
       }
     }
   }
@@ -1085,7 +1091,15 @@ function updatePlayer() {
       player.score += 300;
       sfxSquash();
     } else {
-      if (player.invincible === 0) { player.dead = true; player.deadTimer = 80; sfxDie(); }
+      if (player.invincible === 0) {
+        if (player.hasWaterShot) {
+          player.hasWaterShot = false;
+          player.invincible = 90;
+          sfxSquash();
+        } else {
+          player.dead = true; player.deadTimer = 80; sfxDie();
+        }
+      }
     }
   }
 
@@ -1186,7 +1200,13 @@ function updateFireballs() {
     if (!player.dead && player.invincible === 0 &&
         rectOverlap(player.x, player.y, player.w, player.h, fb.x - 8, fb.y - 8, 16, 16)) {
       fb.alive = false;
-      player.dead = true; player.deadTimer = 80; sfxDie();
+      if (player.hasWaterShot) {
+        player.hasWaterShot = false;
+        player.invincible = 90;
+        sfxSquash();
+      } else {
+        player.dead = true; player.deadTimer = 80; sfxDie();
+      }
     }
   }
   if (fireballs.length > 80) fireballs = fireballs.filter(fb => fb.alive);
