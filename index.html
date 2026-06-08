@@ -38,8 +38,9 @@ const H = canvas.height;
 
 // Scale canvas to fit screen while preserving 16:9 internal resolution
 function fitCanvas() {
-  canvas.style.width  = window.innerWidth  + 'px';
-  canvas.style.height = window.innerHeight + 'px';
+  const scale = Math.min(window.innerWidth / W, window.innerHeight / H);
+  canvas.style.width  = (W * scale) + 'px';
+  canvas.style.height = (H * scale) + 'px';
 }
 window.addEventListener('resize', fitCanvas);
 fitCanvas();
