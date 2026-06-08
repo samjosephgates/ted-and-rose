@@ -106,8 +106,9 @@ function refreshTouchStates(e) {
     const p = getTouchCanvasPos(t);
     if (p.x < W * 0.15)                        touch.left  = true;
     if (p.x >= W * 0.15 && p.x < W * 0.30)    touch.right = true;
-    if (p.x >= W * 0.30 && p.x < W * 0.75)    touch.jump  = true;
-    if (p.x >= W * 0.75) {
+    if (p.x >= W * 0.30 && p.x < W * 0.70)    touch.jump  = true;
+    if (p.x >= W * 0.70 && p.x < W * 0.85)    touch.jump  = true;
+    if (p.x >= W * 0.85) {
       if (player.hasWaterShot) touch.fire = true;
       else touch.jump = true;
     }
@@ -1666,11 +1667,9 @@ function drawTouchControls() {
   const bh = 56, bw = 80, by = H - 80;
   drawZoneBtn('LEFT',  W * 0.075, by, bw, bh, touch.left);
   drawZoneBtn('RIGHT', W * 0.225, by, bw, bh, touch.right);
+  drawZoneBtn('JUMP', W * 0.775, by, bw, bh, touch.jump);
   if (player.hasWaterShot) {
-    drawZoneBtn('JUMP', W * 0.55, by, bw, bh, touch.jump);
-    drawZoneBtn('FIRE', W - bw/2 - 20, by, bw, bh, touch.fire);
-  } else {
-    drawZoneBtn('JUMP', W - bw/2 - 40, by, bw, bh, touch.jump);
+    drawZoneBtn('FIRE', W * 0.925, by, bw, bh, touch.fire);
   }
 
   ctx.textBaseline = 'alphabetic';
